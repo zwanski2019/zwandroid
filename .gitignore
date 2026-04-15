@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+__pycache__/
+*.pyc
+venv/
+.venv/
+assets/flipper-fw/
+assets/flipper-community/
+assets/flipper-irdb/
+backend/data/saved_signals.json
+
