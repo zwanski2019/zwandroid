@@ -3,10 +3,13 @@ from __future__ import annotations
 import os
 from typing import Any, Optional
 
-from supabase import create_client
-
 
 def _client():
+    try:
+        from supabase import create_client
+    except ImportError as exc:
+        raise RuntimeError("Supabase client is not installed. Install dependencies from requirements.txt") from exc
+
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_KEY")
     if not url or not key:
@@ -32,4 +35,3 @@ def list_signals(user_id: Optional[str], type_: Optional[str] = None):
         q = q.eq("type", type_)
     res = q.execute()
     return res.data or []
-
