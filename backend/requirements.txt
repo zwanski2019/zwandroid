@@ -4,3 +4,4 @@ aiofiles==23.2.1
 python-dotenv==1.0.1
 pydantic==2.7.0
 
+supabase==2.15.3
