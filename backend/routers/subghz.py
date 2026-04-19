@@ -1,35 +1,3 @@
-from fastapi import APIRouter, WebSocket
-import asyncio
-
-router = APIRouter()
-
-
-@router.websocket("/ws/scan")
-async def subghz_ws(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        import rtlsdr
-
-        sdr = rtlsdr.RtlSdr()
-        cfg = await websocket.receive_json()
-        freq = cfg.get("freq", 433_920_000)
-        sdr.sample_rate = 2.4e6
-        sdr.center_freq = freq
-        sdr.gain = "auto"
-        while True:
-            import base64, numpy as np
-
-            samples = sdr.read_samples(1024)
-            raw = base64.b64encode(samples.astype(np.complex64).tobytes()).decode()
-            await websocket.send_json({"samples": raw, "freq": freq})
-            await asyncio.sleep(0.1)
-    except ImportError:
-        await websocket.send_json({"error": "rtlsdr not installed — pip install pyrtlsdr"})
-    except Exception as e:
-        await websocket.send_json({"error": str(e)})
-    finally:
-        await websocket.close()
-
 from __future__ import annotations
 
 import asyncio
@@ -65,8 +33,9 @@ async def subghz_scan(websocket: WebSocket):
             raw = base64.b64encode(samples.astype(np.complex64).tobytes()).decode()
             await websocket.send_json({"samples": raw, "freq": freq})
             await asyncio.sleep(0.1)
+    except ImportError:
+        await websocket.send_json({"error": "rtlsdr not installed — pip install pyrtlsdr"})
     except Exception as e:
         await websocket.send_json({"error": str(e)})
     finally:
         await websocket.close()
-

@@ -1,80 +1,66 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Optional
-import json, uuid
-from datetime import datetime
-from pathlib import Path
-
-router = APIRouter()
-
-SIGNALS_FILE = Path(__file__).parent.parent / "data" / "saved_signals.json"
-
-
-class SignalIn(BaseModel):
-    type: str
-    name: str
-    data: str
-    raw: Optional[dict] = {}
-    tags: Optional[list[str]] = []
-
-
-def load_signals():
-    if SIGNALS_FILE.exists():
-        return json.loads(SIGNALS_FILE.read_text())
-    return []
-
-
-def save_signals(signals):
-    SIGNALS_FILE.parent.mkdir(exist_ok=True)
-    SIGNALS_FILE.write_text(json.dumps(signals, indent=2))
-
-
-@router.post("")
-def create_signal(signal: SignalIn):
-    signals = load_signals()
-    entry = {**signal.dict(), "id": str(uuid.uuid4()), "createdAt": datetime.utcnow().isoformat()}
-    signals.insert(0, entry)
-    save_signals(signals)
-    return entry
-
-
-@router.get("")
-def list_signals():
-    return load_signals()
-
-
-@router.delete("/{signal_id}")
-def delete_signal(signal_id: str):
-    signals = [s for s in load_signals() if s["id"] != signal_id]
-    save_signals(signals)
-    return {"deleted": signal_id}
-
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from models.schemas import SignalIn
-from services import signal_db
 
 router = APIRouter()
 
 
 @router.get("/")
 def list_signals(type: Optional[str] = Query(default=None)):
-    # TODO: user scoping via auth
-    try:
-        return {"signals": signal_db.list_signals(user_id=None, type_=type)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Local file-based signals list for development
+    # In production, this would use Supabase (see services/signal_db.py)
+    from pathlib import Path
+    import json
+    
+    signals_file = Path(__file__).parent.parent / "data" / "saved_signals.json"
+    if signals_file.exists():
+        signals = json.loads(signals_file.read_text())
+        if type:
+            signals = [s for s in signals if s.get("type") == type]
+        return {"signals": signals}
+    return {"signals": []}
 
 
 @router.post("/")
 def create_signal(payload: SignalIn):
-    try:
-        created = signal_db.create_signal(user_id=None, payload=payload.model_dump())
-        return {"signal": created}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Local file-based signal storage for development
+    # In production, this would use Supabase (see services/signal_db.py)
+    from pathlib import Path
+    import json
+    import uuid
+    from datetime import datetime
+    
+    signals_file = Path(__file__).parent.parent / "data" / "saved_signals.json"
+    signals_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    if signals_file.exists():
+        signals = json.loads(signals_file.read_text())
+    else:
+        signals = []
+    
+    entry = {
+        **payload.model_dump(),
+        "id": str(uuid.uuid4()),
+        "created_at": datetime.utcnow().isoformat()
+    }
+    signals.insert(0, entry)
+    signals_file.write_text(json.dumps(signals, indent=2))
+    return {"signal": entry}
+
+
+@router.delete("/{signal_id}")
+def delete_signal(signal_id: str):
+    from pathlib import Path
+    import json
+    
+    signals_file = Path(__file__).parent.parent / "data" / "saved_signals.json"
+    if signals_file.exists():
+        signals = json.loads(signals_file.read_text())
+        signals = [s for s in signals if s.get("id") != signal_id]
+        signals_file.write_text(json.dumps(signals, indent=2))
+    return {"deleted": signal_id}
 

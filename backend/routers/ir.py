@@ -1,23 +1,26 @@
 from fastapi import APIRouter, Query
 from pathlib import Path
+from typing import Any
+
+from services.flipper_parser import parse_flipper_ir
 
 router = APIRouter()
 
 IR_DATA_DIR = Path(__file__).parent.parent / "data" / "ir"
-_cache: list[dict] = []
+_cache: list[dict[str, Any]] = []
 
 
 def load_ir_database():
     global _cache
     if _cache:
         return _cache
-    signals: list[dict] = []
+    signals: list[dict[str, Any]] = []
     for ir_file in IR_DATA_DIR.rglob("*.ir"):
         try:
             text = ir_file.read_text(encoding="utf-8", errors="ignore")
             brand = ir_file.parent.name
             device = ir_file.stem
-            current: dict = {}
+            current: dict[str, str] = {}
             for line0 in text.splitlines():
                 line = line0.strip()
                 if line.startswith("#") or not line:
@@ -74,14 +77,6 @@ def get_stats():
     db = load_ir_database()
     brands = set(s.get("brand") for s in db)
     return {"total": len(db), "brands": len(brands)}
-
-from __future__ import annotations
-
-from fastapi import APIRouter
-
-from services.flipper_parser import parse_flipper_ir
-
-router = APIRouter()
 
 
 @router.post("/parse")
