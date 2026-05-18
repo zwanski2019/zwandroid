@@ -11,9 +11,9 @@ export const irAPI = {
 }
 
 export const signalsAPI = {
-  save: (signal: object) => api.post('/signals', signal).then((r) => r.data),
-  list: () => api.get('/signals').then((r) => r.data),
-  community: (q: string) => api.get('/signals/community', { params: { q } }).then((r) => r.data),
+  save: (signal: object) => api.post('/signals/', signal).then((r) => r.data),
+  list: (type?: string) => api.get('/signals/', { params: { type } }).then((r) => r.data),
+  delete: (id: string) => api.delete(`/signals/${id}`).then((r) => r.data),
 }
 
 export const subghzAPI = {

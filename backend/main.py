@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import ir, signals, subghz
+from routers import ir, nfc, signals, subghz
 
 app = FastAPI(title="ZwanDroid API", version="1.0.0")
 
@@ -19,6 +19,7 @@ def health():
 
 
 app.include_router(ir.router, prefix="/ir", tags=["IR"])
+app.include_router(nfc.router, prefix="/nfc", tags=["NFC"])
 app.include_router(signals.router, prefix="/signals", tags=["Signals"])
 app.include_router(subghz.router, prefix="/subghz", tags=["SubGHz"])
 

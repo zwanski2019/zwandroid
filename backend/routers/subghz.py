@@ -33,7 +33,8 @@ async def subghz_scan(websocket: WebSocket):
             raw = base64.b64encode(samples.astype(np.complex64).tobytes()).decode()
             await websocket.send_json({"samples": raw, "freq": freq})
             await asyncio.sleep(0.1)
+    except ImportError:
+        await websocket.send_json({"error": "rtlsdr not installed — pip install pyrtlsdr"})
     except Exception as e:
         await websocket.send_json({"error": str(e)})
     finally:
-        await websocket.close()
