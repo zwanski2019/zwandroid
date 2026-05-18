@@ -38,4 +38,3 @@ async def subghz_scan(websocket: WebSocket):
     except Exception as e:
         await websocket.send_json({"error": str(e)})
     finally:
-        await websocket.close()
